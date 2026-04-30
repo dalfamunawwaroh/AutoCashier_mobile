@@ -1,0 +1,84 @@
+@import "tailwindcss";
+
+@theme {
+  --color-deep-night: #020617;
+  --color-ghost-white: #F8FAFC;
+  --color-cobalt-blue: #2563EB;
+  --color-hot-pink: #F472B6;
+  --color-indigo-accent: #4F46E5;
+  
+  --font-sans: "Inter", "Poppins", ui-sans-serif, system-ui, sans-serif;
+  
+  --animate-spin-slow: spin 8s linear infinite;
+  --animate-gradient-slow: gradient 15s ease infinite;
+
+  @keyframes gradient {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+}
+
+@layer base {
+  :root {
+    --bg-primary: #020617;
+    --text-primary: #FFFFFF;
+    --text-secondary: #94A3B8;
+    --glass-bg: rgba(255, 255, 255, 0.03);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --card-bg: rgba(255, 255, 255, 0.05);
+  }
+
+  :root[data-theme='light'] {
+    --bg-primary: #F8FAFC;
+    --text-primary: #0F172A;
+    --text-secondary: #64748B;
+    --glass-bg: rgba(15, 23, 42, 0.03);
+    --glass-border: rgba(15, 23, 42, 0.1);
+    --card-bg: rgba(255, 255, 255, 0.8);
+  }
+
+  body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    transition: background-color 0.3s ease, color 0.3s ease;
+    @apply antialiased;
+  }
+
+  h1 { font-size: clamp(1.875rem, 5vw, 3rem); }
+  h2 { font-size: clamp(1.5rem, 4vw, 2.25rem); }
+  h3 { font-size: clamp(1.25rem, 3vw, 1.875rem); }
+  p { font-size: clamp(0.875rem, 2vw, 1.125rem); }
+}
+
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+}
+
+.glass-pink {
+  background: rgba(244, 114, 182, 0.05);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(244, 114, 182, 0.2);
+}
+
+.glass-blue {
+  background: rgba(37, 99, 235, 0.05);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(37, 99, 235, 0.2);
+}
+
+.neon-glow-blue {
+  box-shadow: 0 0 15px rgba(37, 99, 235, 0.3);
+}
+
+.neon-glow-pink {
+  box-shadow: 0 0 15px rgba(244, 114, 182, 0.3);
+}
+
+.card-shadow {
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+}

@@ -1,0 +1,5 @@
+{
+  "name": "AutoCashier Buyer",
+  "description": "Premium AI-powered shopping experience for customers.",
+  "requestFramePermissions": ["camera"]
+}
