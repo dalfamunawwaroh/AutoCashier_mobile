@@ -5,9 +5,39 @@ import { BrandLogo } from '../common/BrandLogo';
 import { Input } from '../common/Input';
 import { Button } from '../common/Button';
 import { cn } from '../../lib/utils';
+import { loginUser, registerUser } from '../../lib/auth';
+import { Loader2 } from 'lucide-react';
 
-export const LandingScreen = ({ onLogin, onRegister, onForgotPassword, t }: any) => {
+export const LandingScreen = ({ onLogin, onForgotPassword, t }: any) => {
   const [mode, setMode] = useState<'login' | 'register'>('login');
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+
+  const handleAuth = async () => {
+    setErrorMsg('');
+    if (!phone || !password || (mode === 'register' && !name)) {
+      setErrorMsg('Harap isi semua kolom');
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      if (mode === 'login') {
+        const user = await loginUser(phone, password);
+        onLogin(user);
+      } else {
+        const user = await registerUser(name, phone, password);
+        onLogin(user);
+      }
+    } catch (err: any) {
+      setErrorMsg(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <motion.div 
@@ -57,9 +87,10 @@ export const LandingScreen = ({ onLogin, onRegister, onForgotPassword, t }: any)
                 exit={{ opacity: 0, x: 20 }}
                 className="space-y-4"
               >
-                <Input icon={Phone} placeholder={t.waPlaceholder} />
+                {errorMsg && <p className="text-red-500 text-xs text-center">{errorMsg}</p>}
+                <Input icon={Phone} placeholder={t.waPlaceholder} value={phone} onChange={(e: any) => setPhone(e.target.value)} />
                 <div className="space-y-2 text-right">
-                  <Input icon={Lock} placeholder={t.pinPlaceholder} type="password" />
+                  <Input icon={Lock} placeholder="Password" type="password" value={password} onChange={(e: any) => setPassword(e.target.value)} />
                   <button 
                     onClick={() => onForgotPassword()}
                     className="text-[10px] font-medium text-cobalt-blue/60 hover:text-cobalt-blue transition-colors"
@@ -67,7 +98,9 @@ export const LandingScreen = ({ onLogin, onRegister, onForgotPassword, t }: any)
                     {t.forgotPass}
                   </button>
                 </div>
-                <Button variant="neon" onClick={onLogin}>{t.login}</Button>
+                <Button variant="neon" onClick={handleAuth} disabled={loading}>
+                  {loading ? <Loader2 className="animate-spin mx-auto" size={20} /> : t.login}
+                </Button>
               </motion.div>
             ) : (
               <motion.div 
@@ -77,10 +110,13 @@ export const LandingScreen = ({ onLogin, onRegister, onForgotPassword, t }: any)
                 exit={{ opacity: 0, x: -20 }}
                 className="space-y-4"
               >
-                <Input icon={User} placeholder={t.namePlaceholder} />
-                <Input icon={Phone} placeholder={t.waPlaceholder} />
-                <Input icon={Lock} placeholder={t.pinPlaceholder} type="password" />
-                <Button variant="neon" onClick={onRegister}>{t.register}</Button>
+                {errorMsg && <p className="text-red-500 text-xs text-center">{errorMsg}</p>}
+                <Input icon={User} placeholder="Nama Lengkap" value={name} onChange={(e: any) => setName(e.target.value)} />
+                <Input icon={Phone} placeholder="Nomor WhatsApp" value={phone} onChange={(e: any) => setPhone(e.target.value)} />
+                <Input icon={Lock} placeholder="Password" type="password" value={password} onChange={(e: any) => setPassword(e.target.value)} />
+                <Button variant="neon" onClick={handleAuth} disabled={loading}>
+                  {loading ? <Loader2 className="animate-spin mx-auto" size={20} /> : t.register}
+                </Button>
               </motion.div>
             )}
           </AnimatePresence>

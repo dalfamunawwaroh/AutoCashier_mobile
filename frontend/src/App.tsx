@@ -21,6 +21,7 @@ import { BrandLogo } from './components/common/BrandLogo';
 import { TransactionDetailModal } from './components/modals/TransactionDetailModal';
 import { CheckoutModal } from './components/modals/CheckoutModal';
 import { cn } from './lib/utils';
+import { saveTransaction } from './lib/supabase';
 
 // Screens
 import { LandingScreen } from './components/screens/LandingScreen';
@@ -90,8 +91,7 @@ export default function App() {
             <LandingScreen 
               key="landing" 
               t={t} 
-              onLogin={() => { login(); setScreen('main'); }} 
-              onRegister={() => { login(); setScreen('main'); }} 
+              onLogin={(user: any) => { login(user); setScreen('main'); }} 
               onForgotPassword={() => setScreen('forgot_password')}
             />
           )
@@ -171,10 +171,27 @@ export default function App() {
       <CheckoutModal 
         isOpen={isCheckoutOpen} 
         onClose={() => setIsCheckoutOpen(false)} 
-        onFinish={() => {
+        onFinish={async (details: any) => {
           setIsCheckoutOpen(false);
           setScreen('main');
-          // In a real app we would save the transaction here
+          
+          try {
+            const userId = useAppStore.getState().user?.id;
+            if (userId && details) {
+              await saveTransaction(
+                userId, 
+                details.cart, 
+                details.subtotal, 
+                details.discount, 
+                details.total, 
+                details.pointsEarned, 
+                details.activeVoucherCode
+              );
+            }
+          } catch (e) {
+            console.error('Failed to save transaction', e);
+          }
+          
           useAppStore.getState().clearCart();
         }}
         t={t} 

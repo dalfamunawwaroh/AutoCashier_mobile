@@ -2,10 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, ShoppingCart, Info } from 'lucide-react';
 import { useAppStore } from '../../hooks/useAppStore';
-import { PRODUCTS } from '../../constants/mockData';
+import { useProducts } from '../../hooks/useProducts';
 
 export const ScannerScreen = ({ onBack, onComplete, t }: any) => {
   const { cart, addToCart } = useAppStore();
+  const { products } = useProducts();
   const [isLocking, setIsLocking] = useState(false);
   const [progress, setProgress] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -39,8 +40,10 @@ export const ScannerScreen = ({ onBack, onComplete, t }: any) => {
         if (p >= 100) {
           clearInterval(intv);
           setIsLocking(false);
-          const randomProduct = PRODUCTS[Math.floor(Math.random() * PRODUCTS.length)];
-          addToCart(randomProduct);
+          if (products.length > 0) {
+            const randomProduct = products[Math.floor(Math.random() * products.length)];
+            addToCart({ ...randomProduct, price: Number(randomProduct.price) });
+          }
           return 100;
         }
         return p + 5;

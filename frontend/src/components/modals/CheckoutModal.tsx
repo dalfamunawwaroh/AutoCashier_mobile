@@ -104,7 +104,7 @@ export const CheckoutModal = ({ isOpen, onClose, onFinish, t }: any) => {
             </div>
           </div>
 
-          <Button variant="neon" onClick={onFinish} className="h-16 text-lg">
+          <Button variant="neon" onClick={() => onFinish({ subtotal, discount, total, pointsEarned, cart, activeVoucherCode })} className="h-16 text-lg">
             {t.checkout} <ChevronRight size={20} />
           </Button>
         </motion.div>

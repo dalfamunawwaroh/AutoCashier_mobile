@@ -1,13 +1,45 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
-import { Bell, Zap, Ticket, ChevronRight } from 'lucide-react';
+import { Bell, Zap, Ticket, ChevronRight, Loader2 } from 'lucide-react';
 import { useAppStore } from '../../hooks/useAppStore';
 import { VOUCHERS } from '../../constants/mockData';
+import axios from 'axios';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 export const HomeScreen = ({ t, onGoToVouchers, onGoToPoints, onGoToNotifications }: any) => {
-  const { collectedVoucherCodes, user, notifications } = useAppStore();
+  const { collectedVoucherCodes, user, notifications, setPoints, setUser } = useAppStore();
+  const [loading, setLoading] = useState(true);
+  const [unreadCount, setUnreadCount] = useState(0);
+
   const collectedVouchers = VOUCHERS.filter(v => collectedVoucherCodes.includes(v.code));
-  const hasUnread = notifications.some(n => !n.isRead);
+
+  useEffect(() => {
+    const fetchUserDataAndNotifications = async () => {
+      try {
+        setLoading(true);
+
+        // 1. Ambil data poin & info member terbaru berdasarkan ID user yang sedang login
+        if (user?.id) {
+          const response = await axios.get(`${API_URL}/auth/user/${user.id}`);
+          const userData = response.data;
+          
+          setUser({ ...user, name: userData.full_name });
+          setPoints(userData.points);
+        }
+
+        // Fallback hitung unread jika ada (karena di backend belum diimplementasikan notifikasi)
+        setUnreadCount(notifications.filter(n => !n.isRead).length);
+
+      } catch (error) {
+        console.error('Gagal memuat data dari Supabase:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserDataAndNotifications();
+  }, [user?.id]);
 
   return (
     <motion.div 
@@ -15,9 +47,12 @@ export const HomeScreen = ({ t, onGoToVouchers, onGoToPoints, onGoToNotification
       animate={{ opacity: 1, y: 0 }}
       className="p-6 pb-32 space-y-8 max-w-sm mx-auto"
     >
+      {/* HEADER SECTION */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-black tracking-tight">{t.welcome.replace('{name}', user.name.split(' ')[0])}</h2>
+          <h2 className="text-xl font-black tracking-tight">
+            {t.welcome.replace('{name}', user?.name ? user.name.split(' ')[0] : 'Member')}
+          </h2>
           <p className="text-xs text-slate-500 font-medium">{t.membership}</p>
         </div>
         <button 
@@ -25,10 +60,13 @@ export const HomeScreen = ({ t, onGoToVouchers, onGoToPoints, onGoToNotification
           className="p-3 glass rounded-2xl relative text-cobalt-blue border border-theme-border active:scale-90 transition-transform"
         >
           <Bell size={18} />
-          {hasUnread && <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-hot-pink rounded-full shadow-[0_0_8px_#F472B6]" />}
+          {unreadCount > 0 && (
+            <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-hot-pink rounded-full shadow-[0_0_8px_#F472B6]" />
+          )}
         </button>
       </div>
 
+      {/* POINTS CARD */}
       <motion.div 
         whileTap={{ scale: 0.98 }}
         onClick={onGoToPoints}
@@ -38,7 +76,13 @@ export const HomeScreen = ({ t, onGoToVouchers, onGoToPoints, onGoToNotification
         <div className="relative p-8 text-white flex justify-between items-center">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-widest opacity-80 mb-1">{t.points}</p>
-            <h1 className="text-4xl font-black">1.250</h1>
+            {loading ? (
+              <Loader2 className="w-8 h-8 animate-spin opacity-80" />
+            ) : (
+              <h1 className="text-4xl font-black">
+                {(user?.points || 0).toLocaleString('id-ID')}
+              </h1>
+            )}
           </div>
           <motion.div 
             animate={{ scale: [1, 1.1, 1] }} 
@@ -50,6 +94,7 @@ export const HomeScreen = ({ t, onGoToVouchers, onGoToPoints, onGoToNotification
         </div>
       </motion.div>
 
+      {/* VOUCHERS SECTION */}
       <section className="space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">

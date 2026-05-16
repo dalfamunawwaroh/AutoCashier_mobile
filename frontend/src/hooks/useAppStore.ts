@@ -7,15 +7,18 @@ interface AppState {
   selectedTransaction: any | null;
   collectedVoucherCodes: string[];
   user: {
+    id?: string;
     name: string;
     username: string;
     avatar: string;
     isAdmin: boolean;
+    points?: number;
   };
   cart: { id: string, name: string, price: number, qty: number }[];
   pointPercentage: number;
   activeVoucherCode: string | null;
-  login: () => void;
+  notifications: any[];
+  login: (userData?: any) => void;
   logout: () => void;
   toggleTheme: () => void;
   toggleLang: () => void;
@@ -25,7 +28,11 @@ interface AppState {
   addToCart: (product: { id: string, name: string, price: number }) => void;
   clearCart: () => void;
   updateUser: (data: Partial<AppState['user']>) => void;
+  setUser: (user: any) => void;
+  setPoints: (points: number) => void;
   setPointPercentage: (percent: number) => void;
+  setNotifications: (notifs: any[]) => void;
+  markNotificationsAsRead: () => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -43,7 +50,11 @@ export const useAppStore = create<AppState>((set) => ({
   cart: [],
   pointPercentage: 1, // Default 1%
   activeVoucherCode: null,
-  login: () => set({ isLoggedIn: true }),
+  notifications: [],
+  login: (userData) => set((state) => ({ 
+    isLoggedIn: true, 
+    user: userData ? { ...state.user, ...userData } : state.user 
+  })),
   logout: () => set({ isLoggedIn: false }),
   toggleTheme: () => set((state) => ({ theme: state.theme === 'dark' ? 'light' : 'dark' })),
   toggleLang: () => set((state) => ({ lang: state.lang === 'ID' ? 'EN' : 'ID' })),
@@ -65,5 +76,11 @@ export const useAppStore = create<AppState>((set) => ({
   updateUser: (data) => set((state) => ({
     user: { ...state.user, ...data }
   })),
+  setUser: (user) => set({ user }),
+  setPoints: (points) => set((state) => ({ user: { ...state.user, points } })),
   setPointPercentage: (percent) => set({ pointPercentage: percent }),
+  setNotifications: (notifs) => set({ notifications: notifs }),
+  markNotificationsAsRead: () => set((state) => ({
+    notifications: state.notifications.map(n => ({ ...n, isRead: true }))
+  })),
 }));
