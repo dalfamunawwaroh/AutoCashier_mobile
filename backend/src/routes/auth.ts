@@ -23,7 +23,7 @@ router.post('/login', async (req, res) => {
 
     const isMatch = await bcrypt.compare(password, userData.password);
     if (!isMatch) {
-      return res.status(401).json({ error: 'PIN atau Password salah.' });
+      return res.status(401).json({ error: 'Password salah.' });
     }
 
     res.json(userData);

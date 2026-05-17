@@ -52,12 +52,6 @@ export const LandingScreen = ({ onLogin, onForgotPassword, t }: any) => {
       <div className="w-full max-w-sm mx-auto flex flex-col items-center justify-center flex-1 h-full">
         <div className="mb-4 sm:mb-8 flex flex-col items-center transform scale-75 sm:scale-100 origin-center">
           <BrandLogo size={56} />
-          <div className="text-center mt-2">
-            <h1 className="text-3xl sm:text-4xl font-black tracking-tighter">
-              AUTO<span className="text-cobalt-blue">CASHIER</span>
-            </h1>
-            <p className="text-[9px] sm:text-[10px] text-slate-500 font-medium tracking-[0.4em] uppercase mt-0.5">LookSee Technology</p>
-          </div>
         </div>
 
         <motion.div 

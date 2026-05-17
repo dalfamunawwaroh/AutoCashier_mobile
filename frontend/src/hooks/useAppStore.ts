@@ -39,7 +39,7 @@ interface AppState {
 
 export const useAppStore = create<AppState>((set) => ({
   isLoggedIn: false,
-  theme: 'dark',
+  theme: 'light',
   lang: 'ID',
   selectedTransaction: null,
   collectedVouchers: [],

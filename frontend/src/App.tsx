@@ -72,9 +72,7 @@ export default function App() {
       <div className="min-h-screen bg-theme-bg flex flex-col items-center justify-center p-8">
          <BrandLogo size={60} />
          <div className="mt-8 text-center">
-           <h2 className="text-xl font-black tracking-tighter mb-1">
-             AUTO<span className="text-cobalt-blue">CASHIER</span>
-           </h2>
+
            <p className="text-[10px] text-slate-500 font-medium tracking-[0.4em] uppercase">Initializing...</p>
          </div>
       </div>
