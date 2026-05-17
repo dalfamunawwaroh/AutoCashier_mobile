@@ -7,8 +7,9 @@ const router = Router();
 router.get('/', async (req, res) => {
   try {
     const { data, error } = await supabase
-      .from('member_promo')
+      .from('member_promos')
       .select('*')
+      .is('user_id', null)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
@@ -23,23 +24,43 @@ router.post('/claim', async (req, res) => {
   try {
     const { userId, promoCode } = req.body;
     
-    // Check if user_promos table exists by trying to select from it
-    const { error: checkError } = await supabase.from('user_promos').select('id').limit(1);
-    if (checkError && checkError.code === '42P01') {
-      return res.status(400).json({ error: 'Tolong buat tabel user_promos (id, user_id, promo_code) di database Anda terlebih dahulu.' });
+    // Check if user already claimed it
+    const { data: existing } = await supabase
+      .from('member_promos')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('code', promoCode)
+      .single();
+
+    if (existing) {
+       return res.status(400).json({ error: 'Anda sudah mengklaim voucher ini.' });
     }
 
-    const { data, error } = await supabase
-      .from('user_promos')
+    // Get promo template
+    const { data: promoTemplate, error: fetchError } = await supabase
+      .from('member_promos')
+      .select('*')
+      .is('user_id', null)
+      .eq('code', promoCode)
+      .single();
+
+    if (fetchError || !promoTemplate) {
+      return res.status(404).json({ error: 'Promo tidak ditemukan.' });
+    }
+
+    const { error } = await supabase
+      .from('member_promos')
       .insert({
         user_id: userId,
-        promo_code: promoCode
+        code: promoTemplate.code,
+        discount_type: promoTemplate.discount_type,
+        discount_value: promoTemplate.discount_value,
+        min_purchase: promoTemplate.min_purchase,
+        expires_at: promoTemplate.expires_at,
+        is_used: false
       });
 
     if (error) {
-       if (error.code === '23505') {
-         return res.status(400).json({ error: 'Anda sudah mengklaim voucher ini.' });
-       }
        throw error;
     }
     
@@ -54,33 +75,14 @@ router.get('/claimed/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
     
-    // First try to get claimed promo codes
-    const { data: claims, error: claimsError } = await supabase
-      .from('user_promos')
-      .select('promo_code')
-      .eq('user_id', userId);
+    const { data, error } = await supabase
+      .from('member_promos')
+      .select('*')
+      .or(`user_id.eq.${userId},user_id.is.null`)
+      .eq('is_used', false);
 
-    if (claimsError) {
-      if (claimsError.code === '42P01') {
-        // Table doesn't exist yet, return empty
-        return res.json([]);
-      }
-      throw claimsError;
-    }
-
-    const codes = claims.map(c => c.promo_code);
-
-    if (codes.length > 0) {
-      const { data: promos, error: promosError } = await supabase
-        .from('member_promo')
-        .select('*')
-        .in('code', codes);
-        
-      if (promosError) throw promosError;
-      return res.json(promos);
-    }
-    
-    res.json([]);
+    if (error) throw error;
+    res.json(data);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

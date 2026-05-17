@@ -76,7 +76,7 @@ export const VoucherCenterScreen = ({ t, onBack }: any) => {
                   <p className="text-sm font-bold">{v.code}</p>
                   <p className="text-xs text-slate-500 font-semibold mb-1">{v.title || v.description || 'Diskon Spesial'}</p>
                   <p className="text-[10px] text-cobalt-blue font-bold uppercase tracking-tighter">
-                    {v.valid_until ? `Berlaku s/d ${new Date(v.valid_until).toLocaleDateString()}` : 'Promo Aktif'}
+                    {v.expires_at ? `Berlaku s/d ${new Date(v.expires_at).toLocaleDateString()}` : 'Promo Aktif'}
                   </p>
                 </div>
               </div>

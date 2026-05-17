@@ -111,12 +111,6 @@ export const HomeScreen = ({ t, onGoToVouchers, onGoToPoints, onGoToNotification
           <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
             <Ticket size={14} /> {t.myVouchers}
           </h3>
-          <button 
-            onClick={onGoToVouchers}
-            className="text-[10px] font-bold text-cobalt-blue uppercase flex items-center gap-1 hover:opacity-70 transition-opacity"
-          >
-            {t.claim} <ChevronRight size={12} />
-          </button>
         </div>
         
         <div className="space-y-3">
