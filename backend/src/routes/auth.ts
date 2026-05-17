@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { supabase, supabaseAdmin } from '../supabaseClient';
+import bcrypt from 'bcrypt';
 
 const router = Router();
 
@@ -43,7 +44,7 @@ router.post('/login', async (req, res) => {
 
 router.post('/register', async (req, res) => {
   try {
-    const { name, phone, password } = req.body;
+    const { username, phone, password } = req.body;
     
     if (!password || password.length < 6) {
       return res.status(400).json({ error: 'Password minimal 6 karakter' });
@@ -62,8 +63,8 @@ router.post('/register', async (req, res) => {
       password: password,
       phone_confirm: true,
       user_metadata: {
-        display_name: name,
-        full_name: name
+        display_name: username,
+        full_name: username
       }
     });
 
@@ -78,16 +79,19 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ error: 'Gagal mendaftar ke sistem Autentikasi.' });
     }
 
+    // Hash password sebelum masuk public.users
+    const hashedPassword = await bcrypt.hash(password, 10);
+
     // Insert ke public.users
     const { data, error } = await supabase
       .from('users')
       .insert({
         id: authData.user.id,
-        username: phone,
+        username: username,
         email: `${phone}@autocashier.local`, // dummy email untuk unique constraint
-        full_name: name,
+        full_name: username,
         whatsapp: phone,
-        password: password,
+        password: hashedPassword,
         role: 'member'
       })
       .select()

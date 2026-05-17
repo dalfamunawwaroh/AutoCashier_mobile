@@ -1,4 +1,5 @@
 import express from 'express';
+// trigger nodemon restart
 import cors from 'cors';
 import dotenv from 'dotenv';
 import authRoutes from './routes/auth';

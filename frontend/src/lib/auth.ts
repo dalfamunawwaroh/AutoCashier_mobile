@@ -11,9 +11,9 @@ export const loginUser = async (phone: string, password: string) => {
   }
 };
 
-export const registerUser = async (name: string, phone: string, password: string) => {
+export const registerUser = async (username: string, phone: string, password: string) => {
   try {
-    const response = await axios.post(`${API_URL}/auth/register`, { name, phone, password });
+    const response = await axios.post(`${API_URL}/auth/register`, { username, phone, password });
     return response.data;
   } catch (error: any) {
     throw new Error(error.response?.data?.error || 'Terjadi kesalahan saat register.');
