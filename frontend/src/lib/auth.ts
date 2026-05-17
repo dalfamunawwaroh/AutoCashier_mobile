@@ -29,3 +29,29 @@ export const updateUserProfile = async (id: string, name: string, username: stri
   }
 };
 
+export const resetPassword = async (email: string) => {
+  try {
+    const response = await axios.post(`${API_URL}/auth/forgot-password`, { email });
+    return response.data;
+  } catch (error: any) {
+    throw new Error(error.response?.data?.error || 'Gagal mengirim email reset.');
+  }
+};
+
+export const confirmResetPassword = async (token: string, newPassword: string) => {
+  try {
+    const response = await axios.post(`${API_URL}/auth/reset-password`, { token, newPassword });
+    return response.data;
+  } catch (error: any) {
+    throw new Error(error.response?.data?.error || 'Gagal mereset password.');
+  }
+};
+
+export const verifyOtp = async (email: string, otp: string) => {
+  try {
+    const response = await axios.post(`${API_URL}/auth/verify-otp`, { email, otp });
+    return response.data;
+  } catch (error: any) {
+    throw new Error(error.response?.data?.error || 'Gagal memverifikasi OTP.');
+  }
+};

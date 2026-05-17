@@ -5,15 +5,16 @@ import { BrandLogo } from '../common/BrandLogo';
 import { Input } from '../common/Input';
 import { Button } from '../common/Button';
 import { cn } from '../../lib/utils';
-import { loginUser, registerUser } from '../../lib/auth';
+import { loginUser, registerUser, verifyOtp } from '../../lib/auth';
 import { Loader2 } from 'lucide-react';
 
 export const LandingScreen = ({ onLogin, onForgotPassword, t }: any) => {
-  const [mode, setMode] = useState<'login' | 'register'>('login');
+  const [mode, setMode] = useState<'login' | 'register' | 'otp'>('login');
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -29,8 +30,15 @@ export const LandingScreen = ({ onLogin, onForgotPassword, t }: any) => {
       if (mode === 'login') {
         const user = await loginUser(phone, password);
         onLogin(user);
-      } else {
-        const user = await registerUser(username, email, phone, password);
+      } else if (mode === 'register') {
+        await registerUser(username, email, phone, password);
+        setMode('otp');
+      } else if (mode === 'otp') {
+        if (!otp) {
+          setErrorMsg('Harap masukkan kode OTP');
+          return;
+        }
+        const user = await verifyOtp(email, otp);
         onLogin(user);
       }
     } catch (err: any) {
@@ -97,7 +105,7 @@ export const LandingScreen = ({ onLogin, onForgotPassword, t }: any) => {
                   {loading ? <Loader2 className="animate-spin mx-auto" size={20} /> : t.login}
                 </Button>
               </motion.div>
-            ) : (
+            ) : mode === 'register' ? (
               <motion.div 
                 key="register-form"
                 initial={{ opacity: 0, x: 20 }}
@@ -114,16 +122,40 @@ export const LandingScreen = ({ onLogin, onForgotPassword, t }: any) => {
                   {loading ? <Loader2 className="animate-spin mx-auto" size={20} /> : t.register}
                 </Button>
               </motion.div>
+            ) : (
+              <motion.div 
+                key="otp-form"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 1.05 }}
+                className="space-y-6 text-center py-2"
+              >
+                <div className="w-16 h-16 bg-cobalt-blue/10 text-cobalt-blue rounded-full flex items-center justify-center mx-auto mb-2">
+                  <Mail size={28} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold">Verifikasi Email</h3>
+                  <p className="text-xs text-slate-500 mt-1">Kami telah mengirim 6 angka OTP ke email <strong>{email}</strong></p>
+                </div>
+                {errorMsg && <p className="text-red-500 text-xs">{errorMsg}</p>}
+                <Input icon={Lock} placeholder="Masukkan 6 Angka OTP" type="number" value={otp} onChange={(e: any) => setOtp(e.target.value)} />
+                <Button variant="neon" onClick={handleAuth} disabled={loading || !otp}>
+                  {loading ? <Loader2 className="animate-spin mx-auto" size={20} /> : "Verifikasi Akun"}
+                </Button>
+                <button onClick={() => setMode('register')} className="text-xs text-slate-400 hover:text-white transition-colors">Batal</button>
+              </motion.div>
             )}
           </AnimatePresence>
         </motion.div>
 
-        <p className="mt-6 sm:mt-8 text-xs text-slate-500">
-          {mode === 'login' ? t.noAccount : t.alreadyAccount}{" "}
-          <button onClick={() => setMode(mode === 'login' ? 'register' : 'login')} className="text-cobalt-blue font-semibold">
-            {mode === 'login' ? t.register : t.login}
-          </button>
-        </p>
+        {mode !== 'otp' && (
+          <p className="mt-6 sm:mt-8 text-xs text-slate-500">
+            {mode === 'login' ? t.noAccount : t.alreadyAccount}{" "}
+            <button onClick={() => setMode(mode === 'login' ? 'register' : 'login')} className="text-cobalt-blue font-semibold">
+              {mode === 'login' ? t.register : t.login}
+            </button>
+          </p>
+        )}
       </div>
     </motion.div>
   );

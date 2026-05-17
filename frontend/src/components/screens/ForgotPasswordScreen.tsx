@@ -1,12 +1,29 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ChevronRight, Phone, CheckCircle2 } from 'lucide-react';
+import { ChevronRight, Mail, CheckCircle2, Loader2 } from 'lucide-react';
 import { Input } from '../common/Input';
 import { Button } from '../common/Button';
+import { resetPassword } from '../../lib/auth';
 
 export const ForgotPasswordScreen = ({ t, onBack }: any) => {
   const [step, setStep] = useState(1);
-  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+
+  const handleReset = async () => {
+    if (!email) return;
+    setLoading(true);
+    setErrorMsg('');
+    try {
+      await resetPassword(email);
+      setStep(2);
+    } catch (err: any) {
+      setErrorMsg(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <motion.div 
@@ -28,7 +45,7 @@ export const ForgotPasswordScreen = ({ t, onBack }: any) => {
         <div className="mb-8">
           <h2 className="text-2xl font-black mb-2">{t.forgotPass}</h2>
           <p className="text-xs text-slate-500 font-medium">
-            {step === 1 ? "Masukkan nomor WhatsApp terdaftar untuk mereset password kamu." : "Link reset password telah dikirimkan ke WhatsApp kamu."}
+            {step === 1 ? "Masukkan alamat email terdaftar untuk menerima password baru." : "Password baru telah dikirimkan ke email kamu."}
           </p>
         </div>
 
@@ -41,13 +58,17 @@ export const ForgotPasswordScreen = ({ t, onBack }: any) => {
               exit={{ opacity: 0, x: 20 }}
               className="space-y-6"
             >
+              {errorMsg && <p className="text-red-500 text-xs text-center">{errorMsg}</p>}
               <Input 
-                icon={Phone} 
-                placeholder={t.waPlaceholder} 
-                value={phone}
-                onChange={(e: any) => setPhone(e.target.value)}
+                icon={Mail} 
+                placeholder="Alamat Email" 
+                type="email"
+                value={email}
+                onChange={(e: any) => setEmail(e.target.value)}
               />
-              <Button variant="neon" onClick={() => setStep(2)}>Minta Link Reset</Button>
+              <Button variant="neon" onClick={handleReset} disabled={loading || !email}>
+                {loading ? <Loader2 className="animate-spin mx-auto" size={20} /> : "Kirim Password Baru"}
+              </Button>
             </motion.div>
           ) : (
             <motion.div 
@@ -60,7 +81,7 @@ export const ForgotPasswordScreen = ({ t, onBack }: any) => {
               <div className="w-20 h-20 bg-green-500/10 text-green-500 rounded-3xl flex items-center justify-center mx-auto mb-4">
                 <CheckCircle2 size={40} />
               </div>
-              <p className="text-sm font-semibold text-theme-text px-4">Buka WhatsApp kamu dan ikuti instruksi yang kami kirimkan.</p>
+              <p className="text-sm font-semibold text-theme-text px-4">Cek kotak masuk atau folder spam email kamu untuk mendapatkan password baru.</p>
               <Button variant="outline" onClick={onBack}>Kembali ke Login</Button>
             </motion.div>
           )}

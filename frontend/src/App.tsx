@@ -32,6 +32,7 @@ import { VoucherCenterScreen } from './components/screens/VoucherCenterScreen';
 import { PointsHistoryScreen } from './components/screens/PointsHistoryScreen';
 import { NotificationsScreen } from './components/screens/NotificationsScreen';
 import { ForgotPasswordScreen } from './components/screens/ForgotPasswordScreen';
+import { ResetPasswordScreen } from './components/screens/ResetPasswordScreen';
 import { ScannerScreen } from './components/screens/ScannerScreen';
 
 export default function App() {
@@ -47,12 +48,24 @@ export default function App() {
     setSelectedTransaction 
   } = useAppStore();
 
-  const [screen, setScreen] = useState<'landing' | 'main' | 'scanner' | 'payment' | 'success' | 'vouchers' | 'forgot_password' | 'points_history' | 'notifications'>('landing');
+  const [screen, setScreen] = useState<'landing' | 'main' | 'scanner' | 'payment' | 'success' | 'vouchers' | 'forgot_password' | 'reset_password' | 'points_history' | 'notifications'>('landing');
   const [activeTab, setActiveTab] = useState<'home' | 'history' | 'profile'>('home');
   const [isInitializing, setIsInitializing] = useState(true);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [resetToken, setResetToken] = useState<string | null>(null);
 
   const t = translations[lang];
+
+  useEffect(() => {
+    // Check URL for reset token
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('reset');
+    if (token) {
+      setResetToken(token);
+      setScreen('reset_password');
+      window.history.replaceState({}, document.title, '/');
+    }
+  }, []);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -62,10 +75,10 @@ export default function App() {
     // Check local session
     const timer = setTimeout(() => {
       setIsInitializing(false);
-      if (isLoggedIn) setScreen('main');
+      if (isLoggedIn && !resetToken) setScreen('main');
     }, 1500);
     return () => clearTimeout(timer);
-  }, [isLoggedIn]);
+  }, [isLoggedIn, resetToken]);
 
   if (isInitializing) {
     return (
@@ -83,7 +96,9 @@ export default function App() {
     <div className="min-h-screen bg-theme-bg text-theme-text font-sans selection:bg-cobalt-blue selection:text-white overflow-hidden">
       <AnimatePresence mode="wait">
         {!isLoggedIn ? (
-          screen === 'forgot_password' ? (
+          screen === 'reset_password' && resetToken ? (
+            <ResetPasswordScreen key="reset" token={resetToken} onFinish={() => setScreen('landing')} />
+          ) : screen === 'forgot_password' ? (
             <ForgotPasswordScreen key="forgot" t={t} onBack={() => setScreen('landing')} />
           ) : (
             <LandingScreen 
