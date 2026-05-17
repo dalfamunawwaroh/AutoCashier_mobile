@@ -11,12 +11,21 @@ export const loginUser = async (phone: string, password: string) => {
   }
 };
 
-export const registerUser = async (username: string, phone: string, password: string) => {
+export const registerUser = async (username: string, email: string, phone: string, password: string) => {
   try {
-    const response = await axios.post(`${API_URL}/auth/register`, { username, phone, password });
+    const response = await axios.post(`${API_URL}/auth/register`, { username, email, phone, password });
     return response.data;
   } catch (error: any) {
     throw new Error(error.response?.data?.error || 'Terjadi kesalahan saat register.');
+  }
+};
+
+export const updateUserProfile = async (id: string, name: string, username: string, avatar: string) => {
+  try {
+    const response = await axios.put(`${API_URL}/auth/user/${id}`, { name, username, avatar });
+    return response.data;
+  } catch (error: any) {
+    throw new Error(error.response?.data?.error || 'Terjadi kesalahan saat memperbarui profil.');
   }
 };
 

@@ -8,11 +8,11 @@ import axios from 'axios';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 export const HomeScreen = ({ t, onGoToVouchers, onGoToPoints, onGoToNotifications }: any) => {
-  const { collectedVoucherCodes, user, notifications, setPoints, setUser } = useAppStore();
+  const { user, notifications, setPoints, setUser, collectedVouchers, setCollectedVouchers } = useAppStore();
   const [loading, setLoading] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  const collectedVouchers = VOUCHERS.filter(v => collectedVoucherCodes.includes(v.code));
+
 
   useEffect(() => {
     const fetchUserDataAndNotifications = async () => {
@@ -24,8 +24,17 @@ export const HomeScreen = ({ t, onGoToVouchers, onGoToPoints, onGoToNotification
           const response = await axios.get(`${API_URL}/auth/user/${user.id}`);
           const userData = response.data;
           
-          setUser({ ...user, name: userData.full_name });
+          setUser({ 
+            ...user, 
+            name: userData.full_name, 
+            avatar: userData.avatar_url || 'A', 
+            username: userData.username 
+          });
           setPoints(userData.points);
+          
+          // 2. Fetch claimed vouchers
+          const claimedRes = await axios.get(`${API_URL}/promos/claimed/${user.id}`);
+          setCollectedVouchers(claimedRes.data);
         }
 
         // Fallback hitung unread jika ada (karena di backend belum diimplementasikan notifikasi)
@@ -118,7 +127,7 @@ export const HomeScreen = ({ t, onGoToVouchers, onGoToPoints, onGoToNotification
                    </div>
                    <div>
                      <p className="text-sm font-bold">{v.code}</p>
-                     <p className="text-[10px] text-slate-500">{v.desc}</p>
+                     <p className="text-[10px] text-slate-500">{v.title || v.description || 'Diskon Spesial'}</p>
                    </div>
                 </div>
               </div>

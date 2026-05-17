@@ -1,13 +1,51 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { ChevronRight, Ticket, Info } from 'lucide-react';
+import { ChevronRight, Ticket, Info, Loader2 } from 'lucide-react';
 import { useAppStore } from '../../hooks/useAppStore';
-import { VOUCHERS } from '../../constants/mockData';
 import { GlassCard } from '../common/GlassCard';
 import { cn } from '../../lib/utils';
+import axios from 'axios';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 export const VoucherCenterScreen = ({ t, onBack }: any) => {
-  const { collectedVoucherCodes, claimVoucher } = useAppStore();
+  const { user, collectedVouchers, setCollectedVouchers } = useAppStore();
+  const [promos, setPromos] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [claiming, setClaiming] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchPromos = async () => {
+      try {
+        const promosRes = await axios.get(`${API_URL}/promos`);
+        setPromos(promosRes.data);
+        
+        if (user?.id) {
+          const claimedRes = await axios.get(`${API_URL}/promos/claimed/${user.id}`);
+          setCollectedVouchers(claimedRes.data);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPromos();
+  }, [user?.id]);
+
+  const handleClaim = async (promoCode: string) => {
+    if (!user?.id) return;
+    setClaiming(promoCode);
+    try {
+      await axios.post(`${API_URL}/promos/claim`, { userId: user.id, promoCode });
+      const claimedRes = await axios.get(`${API_URL}/promos/claimed/${user.id}`);
+      setCollectedVouchers(claimedRes.data);
+    } catch (err: any) {
+      alert(err.response?.data?.error || 'Gagal mengklaim voucher');
+    } finally {
+      setClaiming(null);
+    }
+  };
 
   return (
     <motion.div 
@@ -22,8 +60,11 @@ export const VoucherCenterScreen = ({ t, onBack }: any) => {
       </div>
 
       <div className="space-y-4">
-        {VOUCHERS.map(v => {
-          const isCollected = collectedVoucherCodes.includes(v.code);
+        {loading ? (
+          <div className="flex justify-center py-10"><Loader2 className="animate-spin text-cobalt-blue" size={32} /></div>
+        ) : promos.length > 0 ? (
+          promos.map(v => {
+            const isCollected = collectedVouchers.some(cv => cv.code === v.code);
           return (
             <GlassCard key={v.code} className="p-5 flex items-center justify-between relative overflow-hidden group">
               <div className="absolute top-0 left-0 w-1 h-full bg-cobalt-blue opacity-50" />
@@ -33,25 +74,30 @@ export const VoucherCenterScreen = ({ t, onBack }: any) => {
                 </div>
                 <div>
                   <p className="text-sm font-bold">{v.code}</p>
-                  <p className="text-xs text-slate-500 font-semibold mb-1">{v.desc}</p>
-                  <p className="text-[10px] text-cobalt-blue font-bold uppercase tracking-tighter">Berlaku s/d 2026</p>
+                  <p className="text-xs text-slate-500 font-semibold mb-1">{v.title || v.description || 'Diskon Spesial'}</p>
+                  <p className="text-[10px] text-cobalt-blue font-bold uppercase tracking-tighter">
+                    {v.valid_until ? `Berlaku s/d ${new Date(v.valid_until).toLocaleDateString()}` : 'Promo Aktif'}
+                  </p>
                 </div>
               </div>
               <button 
-                onClick={() => !isCollected && claimVoucher(v.code)}
-                disabled={isCollected}
+                onClick={() => !isCollected && handleClaim(v.code)}
+                disabled={isCollected || claiming === v.code}
                 className={cn(
-                  "px-4 py-2 rounded-xl text-[10px] font-bold uppercase transition-all duration-300",
+                  "px-4 py-2 rounded-xl text-[10px] font-bold uppercase transition-all duration-300 min-w-[80px]",
                   isCollected 
                     ? "bg-theme-bg-secondary text-slate-400 border border-theme-border" 
                     : "bg-cobalt-blue text-white shadow-neon hover:scale-105 active:scale-95"
                 )}
               >
-                {isCollected ? t.claimed : t.claim}
+                {claiming === v.code ? <Loader2 size={12} className="animate-spin mx-auto" /> : (isCollected ? t.claimed : t.claim)}
               </button>
             </GlassCard>
           );
-        })}
+        })
+        ) : (
+          <p className="text-center text-slate-500 text-sm py-10">Belum ada promo yang tersedia.</p>
+        )}
       </div>
 
       <div className="p-6 glass rounded-3xl border-cobalt-blue/10 bg-cobalt-blue/5">

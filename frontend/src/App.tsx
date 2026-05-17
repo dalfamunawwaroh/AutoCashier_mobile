@@ -91,7 +91,14 @@ export default function App() {
             <LandingScreen 
               key="landing" 
               t={t} 
-              onLogin={(user: any) => { login(user); setScreen('main'); }} 
+              onLogin={(user: any) => { 
+                login({ 
+                  ...user, 
+                  avatar: user.avatar_url || 'A', 
+                  name: user.full_name 
+                }); 
+                setScreen('main'); 
+              }} 
               onForgotPassword={() => setScreen('forgot_password')}
             />
           )

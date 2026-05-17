@@ -5,7 +5,7 @@ interface AppState {
   theme: 'dark' | 'light';
   lang: 'ID' | 'EN';
   selectedTransaction: any | null;
-  collectedVoucherCodes: string[];
+  collectedVouchers: any[];
   user: {
     id?: string;
     name: string;
@@ -23,7 +23,7 @@ interface AppState {
   toggleTheme: () => void;
   toggleLang: () => void;
   setSelectedTransaction: (tx: any | null) => void;
-  claimVoucher: (code: string) => void;
+  setCollectedVouchers: (vouchers: any[]) => void;
   setActiveVoucher: (code: string | null) => void;
   addToCart: (product: { id: string, name: string, price: number }) => void;
   clearCart: () => void;
@@ -40,7 +40,7 @@ export const useAppStore = create<AppState>((set) => ({
   theme: 'dark',
   lang: 'ID',
   selectedTransaction: null,
-  collectedVoucherCodes: ['GIATHEMAT'],
+  collectedVouchers: [],
   user: {
     name: 'Afa User',
     username: 'afa_jagoan',
@@ -59,11 +59,7 @@ export const useAppStore = create<AppState>((set) => ({
   toggleTheme: () => set((state) => ({ theme: state.theme === 'dark' ? 'light' : 'dark' })),
   toggleLang: () => set((state) => ({ lang: state.lang === 'ID' ? 'EN' : 'ID' })),
   setSelectedTransaction: (tx) => set({ selectedTransaction: tx }),
-  claimVoucher: (code) => set((state) => ({
-    collectedVoucherCodes: state.collectedVoucherCodes.includes(code)
-      ? state.collectedVoucherCodes
-      : [...state.collectedVoucherCodes, code]
-  })),
+  setCollectedVouchers: (vouchers) => set({ collectedVouchers: vouchers }),
   setActiveVoucher: (code) => set({ activeVoucherCode: code }),
   addToCart: (product) => set((state) => {
     const existing = state.cart.find(item => item.id === product.id);

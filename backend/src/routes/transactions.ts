@@ -76,4 +76,20 @@ router.get('/:memberId', async (req, res) => {
   }
 });
 
+router.get('/:memberId/points', async (req, res) => {
+  try {
+    const { memberId } = req.params;
+    const { data, error } = await supabase
+      .from('point_transactions')
+      .select('*')
+      .eq('user_id', memberId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    res.json(data);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export default router;

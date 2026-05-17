@@ -1,14 +1,16 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { User, Star, Lock, Moon, Sun, Languages, ChevronRight, LogOut, CheckCircle2, Camera, ShieldCheck, Save } from 'lucide-react';
+import { User, Star, Lock, Moon, Sun, Languages, ChevronRight, LogOut, CheckCircle2, Camera, ShieldCheck, Save, Loader2 } from 'lucide-react';
 import { useAppStore } from '../../hooks/useAppStore';
 import { Input } from '../common/Input';
 import { Button } from '../common/Button';
 import { cn } from '../../lib/utils';
+import { updateUserProfile } from '../../lib/auth';
 
 export const ProfileScreen = ({ t, theme, toggleTheme, lang, toggleLang, onLogout }: any) => {
   const { user, updateUser, pointPercentage, setPointPercentage } = useAppStore();
   const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [editData, setEditData] = useState({ ...user });
   const [passData, setPassData] = useState({ new: '', confirm: '' });
   const [isChangingPass, setIsChangingPass] = useState(false);
@@ -22,10 +24,18 @@ export const ProfileScreen = ({ t, theme, toggleTheme, lang, toggleLang, onLogou
     setTimeout(() => setNotification(null), 3000);
   };
 
-  const handleSave = () => {
-    updateUser(editData);
-    setIsEditing(false);
-    showNotification(lang === 'ID' ? 'Profil berhasil diperbarui' : 'Profile updated successfully');
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      const updatedData = await updateUserProfile(user.id, editData.name, editData.username, editData.avatar);
+      updateUser({ ...editData, name: updatedData.full_name, username: updatedData.username, avatar: updatedData.avatar_url || editData.avatar });
+      setIsEditing(false);
+      showNotification(lang === 'ID' ? 'Profil berhasil diperbarui' : 'Profile updated successfully');
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handlePassSave = () => {
@@ -93,9 +103,11 @@ export const ProfileScreen = ({ t, theme, toggleTheme, lang, toggleLang, onLogou
             if (isEditing) handleSave();
             else setIsEditing(true);
           }}
-          className="text-xs font-bold text-cobalt-blue uppercase px-4 py-2 glass rounded-full"
+          disabled={isSaving}
+          className="text-xs font-bold text-cobalt-blue uppercase px-4 py-2 glass rounded-full flex items-center gap-2 disabled:opacity-50"
         >
-          {isEditing ? t.saveChanges : t.editProfile}
+          {isSaving ? <Loader2 size={14} className="animate-spin" /> : null}
+          {isSaving ? 'Menyimpan...' : (isEditing ? t.saveChanges : t.editProfile)}
         </button>
       </div>
       

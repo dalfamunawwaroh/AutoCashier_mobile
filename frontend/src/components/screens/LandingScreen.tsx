@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Phone, Lock, User } from 'lucide-react';
+import { Phone, Lock, User, Mail } from 'lucide-react';
 import { BrandLogo } from '../common/BrandLogo';
 import { Input } from '../common/Input';
 import { Button } from '../common/Button';
@@ -11,6 +11,7 @@ import { Loader2 } from 'lucide-react';
 export const LandingScreen = ({ onLogin, onForgotPassword, t }: any) => {
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -18,7 +19,7 @@ export const LandingScreen = ({ onLogin, onForgotPassword, t }: any) => {
 
   const handleAuth = async () => {
     setErrorMsg('');
-    if (!phone || !password || (mode === 'register' && !username)) {
+    if (!phone || !password || (mode === 'register' && (!username || !email))) {
       setErrorMsg('Harap isi semua kolom');
       return;
     }
@@ -29,7 +30,7 @@ export const LandingScreen = ({ onLogin, onForgotPassword, t }: any) => {
         const user = await loginUser(phone, password);
         onLogin(user);
       } else {
-        const user = await registerUser(username, phone, password);
+        const user = await registerUser(username, email, phone, password);
         onLogin(user);
       }
     } catch (err: any) {
@@ -112,6 +113,7 @@ export const LandingScreen = ({ onLogin, onForgotPassword, t }: any) => {
               >
                 {errorMsg && <p className="text-red-500 text-xs text-center">{errorMsg}</p>}
                 <Input icon={User} placeholder="Username" value={username} onChange={(e: any) => setUsername(e.target.value)} />
+                <Input icon={Mail} placeholder="Alamat Email" type="email" value={email} onChange={(e: any) => setEmail(e.target.value)} />
                 <Input icon={Phone} placeholder="Nomor WhatsApp" value={phone} onChange={(e: any) => setPhone(e.target.value)} />
                 <Input icon={Lock} placeholder="Password" type="password" value={password} onChange={(e: any) => setPassword(e.target.value)} />
                 <Button variant="neon" onClick={handleAuth} disabled={loading}>
