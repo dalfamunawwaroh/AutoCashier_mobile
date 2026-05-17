@@ -95,10 +95,12 @@ export default function App() {
                 login({ 
                   ...user, 
                   avatar: user.avatar_url || 'A', 
-                  name: user.full_name 
+                  name: user.full_name,
+                  email: user.email,
+                  phone: user.whatsapp
                 }); 
                 setScreen('main'); 
-              }} 
+              }}  
               onForgotPassword={() => setScreen('forgot_password')}
             />
           )

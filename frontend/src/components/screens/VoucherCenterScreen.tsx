@@ -96,7 +96,7 @@ export const VoucherCenterScreen = ({ t, onBack }: any) => {
           );
         })
         ) : (
-          <p className="text-center text-slate-500 text-sm py-10">Belum ada promo yang tersedia.</p>
+          <p className="text-center text-slate-500 text-sm py-10">{t.noPromosAvailable}</p>
         )}
       </div>
 
@@ -106,9 +106,9 @@ export const VoucherCenterScreen = ({ t, onBack }: any) => {
              <Info size={16} />
            </div>
            <div>
-             <p className="text-xs font-semibold text-theme-text mb-1">Cara Menggunakan</p>
+             <p className="text-xs font-semibold text-theme-text mb-1">{t.howToUse}</p>
              <p className="text-[10px] text-slate-500 leading-relaxed font-medium">
-               Voucher yang telah diambil akan otomatis muncul di halaman pembayaran saat Anda melakukan checkout di terminal.
+               {t.voucherUsageDesc}
              </p>
            </div>
         </div>

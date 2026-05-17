@@ -87,7 +87,7 @@ export const PointsHistoryScreen = ({ t, onBack }: any) => {
             </GlassCard>
           ))
         ) : (
-          <p className="text-center text-slate-500 text-sm py-10">Belum ada riwayat poin</p>
+          <p className="text-center text-slate-500 text-sm py-10">{t.noPointsHistory}</p>
         )}
       </div>
     </motion.div>

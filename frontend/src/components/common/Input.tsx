@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
+import { cn } from '../../lib/utils';
 
-export const Input = ({ icon: Icon, placeholder, type = "text", ...props }: any) => {
+export const Input = ({ icon: Icon, placeholder, type = "text", className, ...props }: any) => {
   const [showPassword, setShowPassword] = useState(false);
   const isPassword = type === "password";
 
@@ -13,7 +14,7 @@ export const Input = ({ icon: Icon, placeholder, type = "text", ...props }: any)
       <input 
         type={isPassword ? (showPassword ? "text" : "password") : type}
         placeholder={placeholder}
-        className="w-full h-14 bg-theme-bg-secondary border border-theme-border rounded-2xl pl-14 pr-12 text-sm font-medium focus:outline-none focus:border-cobalt-blue transition-all"
+        className={cn("w-full h-14 bg-theme-bg-secondary border border-theme-border rounded-2xl pl-14 pr-12 text-sm font-medium focus:outline-none focus:border-cobalt-blue transition-all disabled:opacity-50 disabled:cursor-not-allowed", className)}
         {...props}
       />
       {isPassword && (

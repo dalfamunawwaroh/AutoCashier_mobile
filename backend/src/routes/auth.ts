@@ -107,7 +107,7 @@ router.post('/register', async (req, res) => {
 router.put('/user/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, username, avatar } = req.body;
+    const { name, username, avatar, email } = req.body;
 
     const { data: existingUser, error: fetchError } = await supabase
       .from('users')
@@ -166,6 +166,15 @@ router.put('/user/:id', async (req, res) => {
       updates.username_updated_at = new Date().toISOString();
     }
 
+    if (email && email !== existingUser.email) {
+      const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(id, { email });
+      if (authError && authError.code !== 'user_not_found') {
+        console.error('Failed to update Auth Email:', authError);
+        // Continue even if auth update fails, but log it
+      }
+      updates.email = email;
+    }
+
     const { data, error: updateError } = await supabase
       .from('users')
       .update(updates)
@@ -192,7 +201,7 @@ router.get('/user/:id', async (req, res) => {
     
     const { data: userData, error: userError } = await supabase
       .from('users')
-      .select('full_name, role, avatar_url, username')
+      .select('full_name, role, avatar_url, username, email, whatsapp')
       .eq('id', id)
       .single();
 

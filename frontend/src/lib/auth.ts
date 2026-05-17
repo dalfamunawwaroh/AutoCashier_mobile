@@ -20,9 +20,9 @@ export const registerUser = async (username: string, email: string, phone: strin
   }
 };
 
-export const updateUserProfile = async (id: string, name: string, username: string, avatar: string) => {
+export const updateUserProfile = async (id: string, name: string, username: string, avatar: string, email?: string) => {
   try {
-    const response = await axios.put(`${API_URL}/auth/user/${id}`, { name, username, avatar });
+    const response = await axios.put(`${API_URL}/auth/user/${id}`, { name, username, avatar, email });
     return response.data;
   } catch (error: any) {
     throw new Error(error.response?.data?.error || 'Terjadi kesalahan saat memperbarui profil.');

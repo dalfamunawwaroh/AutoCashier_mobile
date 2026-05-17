@@ -11,6 +11,8 @@ interface AppState {
     name: string;
     username: string;
     avatar: string;
+    email?: string;
+    phone?: string;
     isAdmin: boolean;
     points?: number;
   };

@@ -59,7 +59,7 @@ export const HistoryScreen = ({ t, onShowDetail }: any) => {
             </GlassCard>
           ))
         ) : (
-          <p className="text-center text-slate-500 text-sm py-10">Belum ada riwayat transaksi</p>
+          <p className="text-center text-slate-500 text-sm py-10">{t.noTransactionHistory}</p>
         )}
       </div>
     </motion.div>

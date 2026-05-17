@@ -28,7 +28,9 @@ export const HomeScreen = ({ t, onGoToVouchers, onGoToPoints, onGoToNotification
             ...user, 
             name: userData.full_name, 
             avatar: userData.avatar_url || 'A', 
-            username: userData.username 
+            username: userData.username,
+            email: userData.email,
+            phone: userData.whatsapp
           });
           setPoints(userData.points);
           
@@ -134,7 +136,7 @@ export const HomeScreen = ({ t, onGoToVouchers, onGoToPoints, onGoToNotification
             ))
           ) : (
             <div className="p-8 glass rounded-3xl border-dashed border-theme-border text-center">
-              <p className="text-xs text-slate-500 font-medium italic">Belum ada voucher yang diambil.</p>
+              <p className="text-xs text-slate-500 font-medium italic">{t.noVouchersClaimed}</p>
             </div>
           )}
         </div>

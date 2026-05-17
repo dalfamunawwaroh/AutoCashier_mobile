@@ -63,7 +63,13 @@ export const translations: Record<string, any> = {
     redeem: "Tukar",
     notifications: "Notifikasi",
     noNotifications: "Tidak ada notifikasi",
-    markAllRead: "Tandai sudah baca"
+    markAllRead: "Tandai sudah baca",
+    noVouchersClaimed: "Belum ada voucher yang diambil.",
+    noPromosAvailable: "Belum ada promo yang tersedia.",
+    howToUse: "Cara Menggunakan",
+    voucherUsageDesc: "Voucher yang telah diambil akan otomatis muncul di halaman pembayaran saat Anda melakukan checkout di terminal.",
+    noTransactionHistory: "Belum ada riwayat transaksi",
+    noPointsHistory: "Belum ada riwayat poin"
   },
   EN: {
     login: "Login",
@@ -129,6 +135,12 @@ export const translations: Record<string, any> = {
     redeem: "Redeem",
     notifications: "Notifications",
     noNotifications: "No notifications",
-    markAllRead: "Mark all as read"
+    markAllRead: "Mark all as read",
+    noVouchersClaimed: "No vouchers claimed yet.",
+    noPromosAvailable: "No promos available.",
+    howToUse: "How to Use",
+    voucherUsageDesc: "Claimed vouchers will automatically appear on the payment page when you checkout at the terminal.",
+    noTransactionHistory: "No transaction history",
+    noPointsHistory: "No points history"
   }
 };
