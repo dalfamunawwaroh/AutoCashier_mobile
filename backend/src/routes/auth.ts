@@ -160,7 +160,11 @@ const pendingRegistrations = new Map<string, any>();
 const checkMxRecords = (domain: string): Promise<boolean> => {
   return new Promise((resolve) => {
     dns.resolveMx(domain, (err, addresses) => {
-      if (err || !addresses || addresses.length === 0) resolve(false);
+      if (err) {
+        console.warn(`MX Record check failed for ${domain}: ${err.message}. Bypassing...`);
+        resolve(true);
+      }
+      else if (!addresses || addresses.length === 0) resolve(false);
       else resolve(true);
     });
   });
