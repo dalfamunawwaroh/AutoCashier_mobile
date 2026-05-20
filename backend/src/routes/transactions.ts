@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { supabase } from '../supabaseClient';
+import { supabaseAdmin } from '../supabaseClient';
 
 const router = Router();
 
@@ -8,11 +8,12 @@ router.post('/', async (req, res) => {
     const { memberId, items, total, pointsEarned, voucherCode } = req.body;
     
     const orderNumber = `TX-${Date.now()}`;
-    const { data: txData, error: txError } = await supabase
+    const { data: txData, error: txError } = await supabaseAdmin
       .from('transactions')
       .insert({
         order_number: orderNumber,
         cashier_id: memberId,
+        member_id: memberId,
         total_price: total,
         status: 'completed',
         payment_method: 'cash',
@@ -32,14 +33,14 @@ router.post('/', async (req, res) => {
         subtotal: item.price * item.qty
       }));
 
-      const { error: itemsError } = await supabase
+      const { error: itemsError } = await supabaseAdmin
         .from('transaction_items')
         .insert(txItems);
 
       if (itemsError) throw itemsError;
       
       if (pointsEarned > 0 && memberId) {
-         await supabase.from('point_transactions').insert({
+         await supabaseAdmin.from('point_transactions').insert({
            user_id: memberId,
            transaction_id: txData.id,
            type: 'earn',
@@ -47,9 +48,9 @@ router.post('/', async (req, res) => {
            note: voucherCode ? `Earned with voucher ${voucherCode}` : 'Earned from transaction'
          });
 
-         const { data: pointData } = await supabase.from('member_points').select('balance').eq('user_id', memberId).single();
+         const { data: pointData } = await supabaseAdmin.from('member_points').select('balance').eq('user_id', memberId).single();
          if (pointData) {
-           await supabase.from('member_points').update({ balance: (pointData.balance || 0) + pointsEarned }).eq('user_id', memberId);
+           await supabaseAdmin.from('member_points').update({ balance: (pointData.balance || 0) + pointsEarned }).eq('user_id', memberId);
          }
       }
     }
@@ -63,14 +64,20 @@ router.post('/', async (req, res) => {
 router.get('/:memberId', async (req, res) => {
   try {
     const { memberId } = req.params;
-    const { data, error } = await supabase
+    console.log('[transactions] Fetching for memberId:', memberId);
+    
+    const { data, error } = await supabaseAdmin
       .from('transactions')
-      .select('*, transaction_items(*)')
-      .eq('cashier_id', memberId)
+      .select('*, transaction_items(*, products(name))')
+      .eq('member_id', memberId)
       .order('created_at', { ascending: false });
 
-    if (error) throw error;
-    res.json(data);
+    if (error) {
+      console.error('[transactions] Supabase error:', error);
+      throw error;
+    }
+    console.log('[transactions] Found:', data?.length, 'records');
+    res.json(data || []);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
@@ -79,14 +86,14 @@ router.get('/:memberId', async (req, res) => {
 router.get('/:memberId/points', async (req, res) => {
   try {
     const { memberId } = req.params;
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('point_transactions')
       .select('*')
       .eq('user_id', memberId)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    res.json(data);
+    res.json(data || []);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

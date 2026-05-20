@@ -104,16 +104,20 @@ export default function App() {
             <LandingScreen 
               key="landing" 
               t={t} 
-              onLogin={(user: any) => { 
-                login({ 
-                  ...user, 
-                  avatar: user.avatar_url || 'A', 
-                  name: user.full_name,
+              onLogin={(user: any) => {
+                console.log('[App] onLogin data:', user);
+                login({
+                  id: user.id,
+                  name: user.full_name || user.name || user.username,
+                  username: user.username || '',
+                  avatar: user.avatar_url || user.avatar || 'A',
                   email: user.email,
-                  phone: user.whatsapp
-                }); 
-                setScreen('main'); 
-              }}  
+                  phone: user.whatsapp || user.phone,
+                  isAdmin: user.role === 'admin',
+                  points: user.points || 0,
+                });
+                setScreen('main');
+              }} 
               onForgotPassword={() => setScreen('forgot_password')}
             />
           )
