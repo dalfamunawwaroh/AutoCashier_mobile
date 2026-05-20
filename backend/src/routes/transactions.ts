@@ -76,8 +76,24 @@ router.get('/:memberId', async (req, res) => {
       console.error('[transactions] Supabase error:', error);
       throw error;
     }
+
+    // Fetch points associated with each transaction for this user
+    const { data: pointsData } = await supabaseAdmin
+      .from('point_transactions')
+      .select('transaction_id, points, type')
+      .eq('user_id', memberId)
+      .eq('type', 'earn');
+
+    const transactionsWithPoints = (data || []).map((tx: any) => {
+      const pt = (pointsData || []).find((p: any) => p.transaction_id === tx.id);
+      return {
+        ...tx,
+        points: pt ? pt.points : 0
+      };
+    });
+
     console.log('[transactions] Found:', data?.length, 'records');
-    res.json(data || []);
+    res.json(transactionsWithPoints);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

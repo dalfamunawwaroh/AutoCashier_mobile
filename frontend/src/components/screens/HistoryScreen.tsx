@@ -46,7 +46,23 @@ export const HistoryScreen = ({ t, onShowDetail }: any) => {
 
     if (!dbError) {
       console.log('[HistoryScreen] Supabase direct:', data?.length, 'records');
-      setTransactions(data || []);
+      
+      // Fetch point transactions to map points to each transaction
+      const { data: pointsData } = await supabase
+        .from('point_transactions')
+        .select('transaction_id, points, type')
+        .eq('user_id', user.id)
+        .eq('type', 'earn');
+
+      const transactionsWithPoints = (data || []).map((tx: any) => {
+        const pt = (pointsData || []).find((p: any) => p.transaction_id === tx.id);
+        return {
+          ...tx,
+          points: pt ? pt.points : 0
+        };
+      });
+
+      setTransactions(transactionsWithPoints);
       setLoading(false);
       return;
     }
@@ -125,7 +141,7 @@ export const HistoryScreen = ({ t, onShowDetail }: any) => {
                   })),
                   method: tx.payment_method || 'Cash',
                   total: tx.total_price || 0,
-                  points: 0,
+                  points: tx.points || 0,
                 });
               }}
               className="p-4 flex items-center justify-between cursor-pointer"
