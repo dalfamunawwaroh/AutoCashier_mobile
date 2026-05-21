@@ -1,5 +1,4 @@
 import express from 'express';
-// trigger nodemon restart
 import cors from 'cors';
 import dotenv from 'dotenv';
 import authRoutes from './routes/auth';
@@ -10,21 +9,20 @@ import promosRoutes from './routes/promos';
 dotenv.config();
 
 const app = express();
-const port = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3001;
 
 app.use(cors());
 app.use(express.json());
 
-// Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/promos', promosRoutes);
 
-app.get('/health', (req, res) => {
+app.get('/health', (_req, res) => {
   res.json({ status: 'ok' });
 });
 
-app.listen(port, () => {
-  console.log(`Backend server running on port ${port}`);
+app.listen(PORT, () => {
+  console.log(`Backend server running on port ${PORT}`);
 });

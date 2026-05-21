@@ -1,64 +1,74 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
-import { Bell, Zap, Ticket, ChevronRight, Loader2 } from 'lucide-react';
+import { Bell, Zap, Ticket, Loader2 } from 'lucide-react';
 import { useAppStore } from '../../hooks/useAppStore';
-import { VOUCHERS } from '../../constants/mockData';
 import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
-export const HomeScreen = ({ t, onGoToVouchers, onGoToPoints, onGoToNotifications }: any) => {
-  const { user, notifications, setPoints, setUser, collectedVouchers, setCollectedVouchers } = useAppStore();
+interface HomeScreenProps {
+  t: Record<string, string>;
+  onGoToVouchers: () => void;
+  onGoToPoints: () => void;
+  onGoToNotifications: () => void;
+}
+
+export const HomeScreen = ({
+  t,
+  onGoToVouchers,
+  onGoToPoints,
+  onGoToNotifications,
+}: HomeScreenProps) => {
+  const { user, notifications, setPoints, setUser, collectedVouchers, setCollectedVouchers } =
+    useAppStore();
   const [loading, setLoading] = useState(true);
-  const [unreadCount, setUnreadCount] = useState(0);
 
-
+  const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   useEffect(() => {
-    const fetchUserDataAndNotifications = async () => {
+    const loadUserData = async () => {
+      if (!user?.id) {
+        setLoading(false);
+        return;
+      }
       try {
         setLoading(true);
 
-        // 1. Ambil data poin & info member terbaru berdasarkan ID user yang sedang login
-        if (user?.id) {
-          const response = await axios.get(`${API_URL}/auth/user/${user.id}`);
-          const userData = response.data;
-          
-          setUser({ 
-            ...user, 
-            name: userData.full_name, 
-            avatar: userData.avatar_url || 'A', 
-            username: userData.username,
-            email: userData.email,
-            phone: userData.whatsapp
-          });
-          setPoints(userData.points);
-          
-          // 2. Fetch claimed vouchers
-          const claimedRes = await axios.get(`${API_URL}/promos/claimed/${user.id}`);
-          setCollectedVouchers(claimedRes.data);
-        }
+        // Refresh user profile & points
+        const { data: userData } = await axios.get(`${API_URL}/auth/user/${user.id}`);
+        setUser({
+          ...user,
+          name: userData.full_name,
+          avatar: userData.avatar_url || 'A',
+          username: userData.username,
+          email: userData.email,
+          phone: userData.whatsapp,
+        });
+        setPoints(userData.points);
 
-        // Fallback hitung unread jika ada (karena di backend belum diimplementasikan notifikasi)
-        setUnreadCount(notifications.filter(n => !n.isRead).length);
-
+        // Refresh claimed vouchers
+        const { data: claimedVouchers } = await axios.get(
+          `${API_URL}/promos/claimed/${user.id}`
+        );
+        setCollectedVouchers(claimedVouchers);
       } catch (error) {
-        console.error('Gagal memuat data dari Supabase:', error);
+        console.error('Gagal memuat data pengguna:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchUserDataAndNotifications();
+    loadUserData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       className="p-6 pb-32 space-y-8 max-w-sm mx-auto"
     >
-      {/* HEADER SECTION */}
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-black tracking-tight">
@@ -66,7 +76,7 @@ export const HomeScreen = ({ t, onGoToVouchers, onGoToPoints, onGoToNotification
           </h2>
           <p className="text-xs text-slate-500 font-medium">{t.membership}</p>
         </div>
-        <button 
+        <button
           onClick={onGoToNotifications}
           className="p-3 glass rounded-2xl relative text-cobalt-blue border border-theme-border active:scale-90 transition-transform"
         >
@@ -77,8 +87,8 @@ export const HomeScreen = ({ t, onGoToVouchers, onGoToPoints, onGoToNotification
         </button>
       </div>
 
-      {/* POINTS CARD */}
-      <motion.div 
+      {/* Points card */}
+      <motion.div
         whileTap={{ scale: 0.98 }}
         onClick={onGoToPoints}
         className="relative group overflow-hidden rounded-[2.5rem] cursor-pointer"
@@ -86,7 +96,9 @@ export const HomeScreen = ({ t, onGoToVouchers, onGoToPoints, onGoToNotification
         <div className="absolute inset-0 bg-gradient-to-br from-cobalt-blue to-hot-pink opacity-80" />
         <div className="relative p-8 text-white flex justify-between items-center">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-widest opacity-80 mb-1">{t.points}</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest opacity-80 mb-1">
+              {t.points}
+            </p>
             {loading ? (
               <Loader2 className="w-8 h-8 animate-spin opacity-80" />
             ) : (
@@ -95,8 +107,8 @@ export const HomeScreen = ({ t, onGoToVouchers, onGoToPoints, onGoToNotification
               </h1>
             )}
           </div>
-          <motion.div 
-            animate={{ scale: [1, 1.1, 1] }} 
+          <motion.div
+            animate={{ scale: [1, 1.1, 1] }}
             transition={{ duration: 2, repeat: Infinity }}
             className="p-4 bg-white/20 rounded-3xl backdrop-blur-md"
           >
@@ -105,32 +117,39 @@ export const HomeScreen = ({ t, onGoToVouchers, onGoToPoints, onGoToNotification
         </div>
       </motion.div>
 
-      {/* VOUCHERS SECTION */}
+      {/* Claimed vouchers */}
       <section className="space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
             <Ticket size={14} /> {t.myVouchers}
           </h3>
         </div>
-        
+
         <div className="space-y-3">
           {collectedVouchers.length > 0 ? (
-            collectedVouchers.map(v => (
-              <div key={v.code} className="p-4 glass rounded-2xl flex items-center justify-between border-dashed border-cobalt-blue/30">
+            collectedVouchers.map((v) => (
+              <div
+                key={v.code}
+                className="p-4 glass rounded-2xl flex items-center justify-between border-dashed border-cobalt-blue/30"
+              >
                 <div className="flex items-center gap-4">
-                   <div className="p-3 bg-cobalt-blue/10 text-cobalt-blue rounded-xl">
-                     <Ticket size={18} />
-                   </div>
-                   <div>
-                     <p className="text-sm font-bold">{v.code}</p>
-                     <p className="text-[10px] text-slate-500">{v.title || v.description || 'Diskon Spesial'}</p>
-                   </div>
+                  <div className="p-3 bg-cobalt-blue/10 text-cobalt-blue rounded-xl">
+                    <Ticket size={18} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold">{v.code}</p>
+                    <p className="text-[10px] text-slate-500">
+                      {v.title || v.description || 'Diskon Spesial'}
+                    </p>
+                  </div>
                 </div>
               </div>
             ))
           ) : (
             <div className="p-8 glass rounded-3xl border-dashed border-theme-border text-center">
-              <p className="text-xs text-slate-500 font-medium italic">{t.noVouchersClaimed}</p>
+              <p className="text-xs text-slate-500 font-medium italic">
+                {t.noVouchersClaimed}
+              </p>
             </div>
           )}
         </div>

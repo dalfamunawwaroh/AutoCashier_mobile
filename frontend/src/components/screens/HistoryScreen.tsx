@@ -5,9 +5,29 @@ import { GlassCard } from '../common/GlassCard';
 import { useAppStore } from '../../hooks/useAppStore';
 import { supabase } from '../../lib/supabase';
 
-export const HistoryScreen = ({ t, onShowDetail }: any) => {
+interface TransactionSummary {
+  id: string;
+  order_number: string;
+  created_at: string;
+  total_price: number;
+  status: string;
+  payment_method: string;
+  transaction_items: Array<{
+    quantity: number;
+    unit_price: number;
+    products: { name: string } | null;
+  }>;
+  points: number;
+}
+
+interface HistoryScreenProps {
+  t: Record<string, string>;
+  onShowDetail: (tx: any) => void;
+}
+
+export const HistoryScreen = ({ t, onShowDetail }: HistoryScreenProps) => {
   const { user } = useAppStore();
-  const [transactions, setTransactions] = useState<any[]>([]);
+  const [transactions, setTransactions] = useState<TransactionSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -21,9 +41,7 @@ export const HistoryScreen = ({ t, onShowDetail }: any) => {
       return;
     }
 
-    console.log('[HistoryScreen] Fetching transactions for user.id:', user.id);
-
-    // Coba langsung ke Supabase dulu
+    // Primary: direct Supabase query (faster, no backend round-trip)
     const { data, error: dbError } = await supabase
       .from('transactions')
       .select(`
@@ -45,30 +63,26 @@ export const HistoryScreen = ({ t, onShowDetail }: any) => {
       .order('created_at', { ascending: false });
 
     if (!dbError) {
-      console.log('[HistoryScreen] Supabase direct:', data?.length, 'records');
-      
-      // Fetch point transactions to map points to each transaction
+      // Enrich each transaction with its earned points
       const { data: pointsData } = await supabase
         .from('point_transactions')
-        .select('transaction_id, points, type')
+        .select('transaction_id, points')
         .eq('user_id', user.id)
         .eq('type', 'earn');
 
-      const transactionsWithPoints = (data || []).map((tx: any) => {
-        const pt = (pointsData || []).find((p: any) => p.transaction_id === tx.id);
-        return {
-          ...tx,
-          points: pt ? pt.points : 0
-        };
+      const enriched = (data || []).map((tx: any) => {
+        const pointEntry = (pointsData || []).find(
+          (p: any) => p.transaction_id === tx.id
+        );
+        return { ...tx, points: pointEntry?.points ?? 0 };
       });
 
-      setTransactions(transactionsWithPoints);
+      setTransactions(enriched);
       setLoading(false);
       return;
     }
 
-    // Jika Supabase gagal (RLS), fallback ke backend API
-    console.warn('[HistoryScreen] Supabase direct failed, falling back to API:', dbError.message);
+    // Fallback: backend API (handles RLS-restricted environments)
     try {
       const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
       const res = await fetch(`${API_URL}/transactions/${user.id}`);
@@ -77,10 +91,8 @@ export const HistoryScreen = ({ t, onShowDetail }: any) => {
         throw new Error(errData.error || `HTTP ${res.status}`);
       }
       const apiData = await res.json();
-      console.log('[HistoryScreen] Backend API:', apiData?.length, 'records');
       setTransactions(apiData || []);
     } catch (apiErr: any) {
-      console.error('[HistoryScreen] Both methods failed:', apiErr.message);
       setError(`Gagal memuat riwayat: ${apiErr.message}`);
     }
 
@@ -89,7 +101,21 @@ export const HistoryScreen = ({ t, onShowDetail }: any) => {
 
   useEffect(() => {
     fetchTransactions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
+
+  const formatDetail = (tx: TransactionSummary) => ({
+    id: tx.order_number || `TX-${tx.id.substring(0, 8)}`,
+    date: new Date(tx.created_at).toLocaleString('id-ID'),
+    items: (tx.transaction_items || []).map((item) => ({
+      qty: item.quantity,
+      name: item.products?.name || 'Produk',
+      price: item.unit_price,
+    })),
+    method: tx.payment_method || 'Cash',
+    total: tx.total_price || 0,
+    points: tx.points || 0,
+  });
 
   return (
     <motion.div
@@ -127,23 +153,10 @@ export const HistoryScreen = ({ t, onShowDetail }: any) => {
             </button>
           </div>
         ) : transactions.length > 0 ? (
-          transactions.map(tx => (
+          transactions.map((tx) => (
             <GlassCard
               key={tx.id}
-              onClick={() => {
-                onShowDetail({
-                  id: tx.order_number || `TX-${tx.id.toString().substring(0, 8)}`,
-                  date: new Date(tx.created_at).toLocaleString('id-ID'),
-                  items: (tx.transaction_items || []).map((item: any) => ({
-                    qty: item.quantity,
-                    name: item.products?.name || 'Produk',
-                    price: item.unit_price,
-                  })),
-                  method: tx.payment_method || 'Cash',
-                  total: tx.total_price || 0,
-                  points: tx.points || 0,
-                });
-              }}
+              onClick={() => onShowDetail(formatDetail(tx))}
               className="p-4 flex items-center justify-between cursor-pointer"
             >
               <div className="flex items-center gap-4">
@@ -152,7 +165,7 @@ export const HistoryScreen = ({ t, onShowDetail }: any) => {
                 </div>
                 <div>
                   <p className="font-semibold text-sm">
-                    {tx.order_number || `TX-${tx.id.toString().substring(0, 8)}`}
+                    {tx.order_number || `TX-${tx.id.substring(0, 8)}`}
                   </p>
                   <p className="text-[10px] text-slate-500">
                     {new Date(tx.created_at).toLocaleDateString('id-ID', {
@@ -167,7 +180,9 @@ export const HistoryScreen = ({ t, onShowDetail }: any) => {
                 </div>
               </div>
               <div className="text-right">
-                <p className="font-bold text-sm">Rp {tx.total_price?.toLocaleString('id-ID')}</p>
+                <p className="font-bold text-sm">
+                  Rp {tx.total_price?.toLocaleString('id-ID')}
+                </p>
                 <p className="text-[10px] text-green-500 font-medium capitalize">
                   {tx.status || 'completed'}
                 </p>
@@ -179,7 +194,9 @@ export const HistoryScreen = ({ t, onShowDetail }: any) => {
             <Package className="text-slate-300" size={40} />
             <p className="text-center text-slate-500 text-sm">{t.noTransactionHistory}</p>
             {user?.id && (
-              <p className="text-[10px] text-slate-400">User ID: {user.id.substring(0, 8)}...</p>
+              <p className="text-[10px] text-slate-400">
+                User ID: {user.id.substring(0, 8)}...
+              </p>
             )}
           </div>
         )}

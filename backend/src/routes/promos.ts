@@ -3,8 +3,8 @@ import { supabase } from '../supabaseClient';
 
 const router = Router();
 
-// Get all available promos
-router.get('/', async (req, res) => {
+/** Get all available promo templates (not yet claimed by any user) */
+router.get('/', async (_req, res) => {
   try {
     const { data, error } = await supabase
       .from('member_promos')
@@ -19,24 +19,23 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Claim a promo
+/** Claim a promo for a user by copying the template row with their user_id */
 router.post('/claim', async (req, res) => {
   try {
     const { userId, promoCode } = req.body;
-    
-    // Check if user already claimed it
-    const { data: existing } = await supabase
+
+    // Guard: prevent duplicate claims
+    const { data: existingClaim } = await supabase
       .from('member_promos')
       .select('id')
       .eq('user_id', userId)
       .eq('code', promoCode)
       .single();
 
-    if (existing) {
-       return res.status(400).json({ error: 'Anda sudah mengklaim voucher ini.' });
+    if (existingClaim) {
+      return res.status(400).json({ error: 'Anda sudah mengklaim voucher ini.' });
     }
 
-    // Get promo template
     const { data: promoTemplate, error: fetchError } = await supabase
       .from('member_promos')
       .select('*')
@@ -48,33 +47,28 @@ router.post('/claim', async (req, res) => {
       return res.status(404).json({ error: 'Promo tidak ditemukan.' });
     }
 
-    const { error } = await supabase
-      .from('member_promos')
-      .insert({
-        user_id: userId,
-        code: promoTemplate.code,
-        discount_type: promoTemplate.discount_type,
-        discount_value: promoTemplate.discount_value,
-        min_purchase: promoTemplate.min_purchase,
-        expires_at: promoTemplate.expires_at,
-        is_used: false
-      });
+    const { error: insertError } = await supabase.from('member_promos').insert({
+      user_id: userId,
+      code: promoTemplate.code,
+      discount_type: promoTemplate.discount_type,
+      discount_value: promoTemplate.discount_value,
+      min_purchase: promoTemplate.min_purchase,
+      expires_at: promoTemplate.expires_at,
+      is_used: false,
+    });
 
-    if (error) {
-       throw error;
-    }
-    
+    if (insertError) throw insertError;
+
     res.json({ success: true });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
 });
 
-// Get claimed promos by user
+/** Get all unclaimed/unused promos for a specific user */
 router.get('/claimed/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
-    
     const { data, error } = await supabase
       .from('member_promos')
       .select('*')

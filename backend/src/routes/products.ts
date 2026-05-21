@@ -3,12 +3,9 @@ import { supabase } from '../supabaseClient';
 
 const router = Router();
 
-router.get('/', async (req, res) => {
+router.get('/', async (_req, res) => {
   try {
-    const { data, error } = await supabase
-      .from('products')
-      .select('*');
-
+    const { data, error } = await supabase.from('products').select('*');
     if (error) throw error;
     res.json(data);
   } catch (error: any) {

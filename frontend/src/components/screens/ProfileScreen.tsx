@@ -1,36 +1,77 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { User, Star, Lock, Moon, Sun, Languages, ChevronRight, LogOut, CheckCircle2, Camera, ShieldCheck, Save, Loader2, Mail, Phone } from 'lucide-react';
+import {
+  User,
+  Star,
+  Lock,
+  Moon,
+  Sun,
+  Languages,
+  ChevronRight,
+  LogOut,
+  CheckCircle2,
+  Camera,
+  Loader2,
+  Mail,
+  Phone,
+} from 'lucide-react';
 import { useAppStore } from '../../hooks/useAppStore';
 import { Input } from '../common/Input';
 import { Button } from '../common/Button';
 import { cn } from '../../lib/utils';
 import { updateUserProfile } from '../../lib/auth';
 
-export const ProfileScreen = ({ t, theme, toggleTheme, lang, toggleLang, onLogout }: any) => {
-  const { user, updateUser, pointPercentage, setPointPercentage } = useAppStore();
+interface ProfileScreenProps {
+  t: Record<string, string>;
+  theme: 'dark' | 'light';
+  toggleTheme: () => void;
+  lang: 'ID' | 'EN';
+  toggleLang: () => void;
+  onLogout: () => void;
+}
+
+export const ProfileScreen = ({
+  t,
+  theme,
+  toggleTheme,
+  lang,
+  toggleLang,
+  onLogout,
+}: ProfileScreenProps) => {
+  const { user, updateUser } = useAppStore();
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [editData, setEditData] = useState({ ...user });
-  const [passData, setPassData] = useState({ new: '', confirm: '' });
-  const [isChangingPass, setIsChangingPass] = useState(false);
-  const [adminPointPercent, setAdminPointPercent] = useState(pointPercentage);
-  const [notification, setNotification] = useState<{ message: string, type: 'success' } | null>(null);
+  const [passwordData, setPasswordData] = useState({ new: '', confirm: '' });
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const showNotification = (message: string) => {
-    setNotification({ message, type: 'success' });
-    setTimeout(() => setNotification(null), 3000);
+  const showToast = (message: string) => {
+    setToastMessage(message);
+    setTimeout(() => setToastMessage(null), 3000);
   };
 
-  const handleSave = async () => {
+  const handleSaveProfile = async () => {
     setIsSaving(true);
     try {
-      const updatedData = await updateUserProfile(user.id, editData.name, editData.username, editData.avatar, editData.email);
-      updateUser({ ...editData, name: updatedData.full_name, username: updatedData.username, avatar: updatedData.avatar_url || editData.avatar, email: updatedData.email });
+      const updated = await updateUserProfile(
+        user.id!,
+        editData.name,
+        editData.username,
+        editData.avatar,
+        editData.email
+      );
+      updateUser({
+        ...editData,
+        name: updated.full_name,
+        username: updated.username,
+        avatar: updated.avatar_url || editData.avatar,
+        email: updated.email,
+      });
       setIsEditing(false);
-      showNotification(lang === 'ID' ? 'Profil berhasil diperbarui' : 'Profile updated successfully');
+      showToast(lang === 'ID' ? 'Profil berhasil diperbarui' : 'Profile updated successfully');
     } catch (err: any) {
       alert(err.message);
     } finally {
@@ -38,30 +79,31 @@ export const ProfileScreen = ({ t, theme, toggleTheme, lang, toggleLang, onLogou
     }
   };
 
-  const handlePassSave = () => {
-    if (!passData.new || passData.new !== passData.confirm) return;
-    setIsChangingPass(false);
-    setPassData({ new: '', confirm: '' });
-    showNotification(lang === 'ID' ? 'Password baru berhasil disimpan' : 'New password saved successfully');
+  const handleSavePassword = () => {
+    if (!passwordData.new || passwordData.new !== passwordData.confirm) return;
+    setIsChangingPassword(false);
+    setPasswordData({ new: '', confirm: '' });
+    showToast(
+      lang === 'ID' ? 'Password baru berhasil disimpan' : 'New password saved successfully'
+    );
   };
 
   const handleAvatarClick = () => {
-    if (isEditing) {
-      fileInputRef.current?.click();
-    }
+    if (isEditing) fileInputRef.current?.click();
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = reader.result as string;
-        setEditData({ ...editData, avatar: base64String });
-      };
-      reader.readAsDataURL(file);
-    }
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setEditData({ ...editData, avatar: reader.result as string });
+    };
+    reader.readAsDataURL(file);
   };
+
+  const avatarValue = isEditing ? editData.avatar : user.avatar;
+  const isSingleCharAvatar = avatarValue.length <= 2;
 
   return (
     <motion.div
@@ -74,12 +116,12 @@ export const ProfileScreen = ({ t, theme, toggleTheme, lang, toggleLang, onLogou
         ref={fileInputRef}
         className="hidden"
         accept="image/*"
-        onChange={handleFileChange}
+        onChange={handleAvatarFileChange}
       />
 
-      {/* Toast Notification */}
+      {/* Toast notification */}
       <AnimatePresence>
-        {notification && (
+        {toastMessage && (
           <motion.div
             initial={{ opacity: 0, y: -20, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -90,7 +132,7 @@ export const ProfileScreen = ({ t, theme, toggleTheme, lang, toggleLang, onLogou
               <div className="w-6 h-6 bg-cobalt-blue text-white rounded-full flex items-center justify-center">
                 <CheckCircle2 size={14} />
               </div>
-              <span className="text-xs font-black text-theme-text">{notification.message}</span>
+              <span className="text-xs font-black text-theme-text">{toastMessage}</span>
             </div>
           </motion.div>
         )}
@@ -100,7 +142,7 @@ export const ProfileScreen = ({ t, theme, toggleTheme, lang, toggleLang, onLogou
         <h2 className="text-2xl font-black">{t.profile}</h2>
         <button
           onClick={() => {
-            if (isEditing) handleSave();
+            if (isEditing) handleSaveProfile();
             else {
               setEditData({ ...user });
               setIsEditing(true);
@@ -109,19 +151,20 @@ export const ProfileScreen = ({ t, theme, toggleTheme, lang, toggleLang, onLogou
           disabled={isSaving}
           className="text-xs font-bold text-cobalt-blue uppercase px-4 py-2 glass rounded-full flex items-center gap-2 disabled:opacity-50"
         >
-          {isSaving ? <Loader2 size={14} className="animate-spin" /> : null}
-          {isSaving ? 'Menyimpan...' : (isEditing ? t.saveChanges : t.editProfile)}
+          {isSaving && <Loader2 size={14} className="animate-spin" />}
+          {isSaving ? 'Menyimpan...' : isEditing ? t.saveChanges : t.editProfile}
         </button>
       </div>
 
+      {/* Avatar */}
       <div className="flex flex-col items-center space-y-4 py-4">
         <div className="relative group cursor-pointer" onClick={handleAvatarClick}>
           <div className="w-24 h-24 rounded-full bg-gradient-to-br from-cobalt-blue to-hot-pink p-1 shadow-neon overflow-hidden">
             <div className="w-full h-full rounded-full bg-theme-bg flex items-center justify-center text-3xl font-black overflow-hidden relative">
-              {(isEditing ? editData.avatar : user.avatar).length <= 2 ? (
-                <span>{isEditing ? editData.avatar : user.avatar}</span>
+              {isSingleCharAvatar ? (
+                <span>{avatarValue}</span>
               ) : (
-                <img src={isEditing ? editData.avatar : user.avatar} className="w-full h-full object-cover" alt="Avatar" />
+                <img src={avatarValue} className="w-full h-full object-cover" alt="Avatar" />
               )}
               {isEditing && (
                 <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-white">
@@ -142,14 +185,24 @@ export const ProfileScreen = ({ t, theme, toggleTheme, lang, toggleLang, onLogou
             <h3 className="text-lg font-semibold">{user.name}</h3>
             <p className="text-slate-500 text-xs font-medium">@{user.username}</p>
             <div className="mt-3 flex items-center justify-center gap-3 text-[10px] font-bold text-slate-400">
-              {user.email && <span className="flex items-center gap-1 bg-theme-bg-secondary px-2 py-1 rounded-md"><Mail size={10} /> {user.email}</span>}
-              {user.phone && <span className="flex items-center gap-1 bg-theme-bg-secondary px-2 py-1 rounded-md"><Phone size={10} /> {user.phone}</span>}
+              {user.email && (
+                <span className="flex items-center gap-1 bg-theme-bg-secondary px-2 py-1 rounded-md">
+                  <Mail size={10} /> {user.email}
+                </span>
+              )}
+              {user.phone && (
+                <span className="flex items-center gap-1 bg-theme-bg-secondary px-2 py-1 rounded-md">
+                  <Phone size={10} /> {user.phone}
+                </span>
+              )}
             </div>
           </div>
         ) : (
           <div className="w-full space-y-3">
             <div className="space-y-1">
-              <label className="text-[10px] font-semibold uppercase text-slate-500 ml-1">{t.fullName}</label>
+              <label className="text-[10px] font-semibold uppercase text-slate-500 ml-1">
+                {t.fullName}
+              </label>
               <Input
                 icon={User}
                 value={editData.name}
@@ -157,7 +210,9 @@ export const ProfileScreen = ({ t, theme, toggleTheme, lang, toggleLang, onLogou
               />
             </div>
             <div className="space-y-1">
-              <label className="text-[10px] font-semibold uppercase text-slate-500 ml-1">Email</label>
+              <label className="text-[10px] font-semibold uppercase text-slate-500 ml-1">
+                Email
+              </label>
               <Input
                 icon={Mail}
                 type="email"
@@ -172,27 +227,34 @@ export const ProfileScreen = ({ t, theme, toggleTheme, lang, toggleLang, onLogou
               <Input
                 icon={Phone}
                 value={editData.phone || ''}
-                disabled={true}
-                onChange={() => { }}
+                disabled
+                onChange={() => {}}
               />
             </div>
             <div className="space-y-1">
-              <label className="text-[10px] font-semibold uppercase text-slate-500 ml-1">{t.username}</label>
+              <label className="text-[10px] font-semibold uppercase text-slate-500 ml-1">
+                {t.username}
+              </label>
               <Input
                 icon={Star}
                 value={editData.username}
-                onChange={(e: any) => setEditData({ ...editData, username: e.target.value })}
+                onChange={(e: any) =>
+                  setEditData({ ...editData, username: e.target.value })
+                }
               />
             </div>
           </div>
         )}
       </div>
 
+      {/* Settings */}
       <div className="space-y-3 pt-4">
-        <h4 className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest ml-1">{t.settings}</h4>
+        <h4 className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest ml-1">
+          {t.settings}
+        </h4>
 
         <div className="glass rounded-[2rem] overflow-hidden border-theme-border divide-y divide-theme-border">
-          {/* Theme Toggle */}
+          {/* Theme toggle */}
           <div className="p-5 flex items-center justify-between hover:bg-theme-bg-secondary transition-colors">
             <div className="flex items-center gap-4">
               <div className="p-2 bg-indigo-500/10 text-indigo-500 rounded-xl">
@@ -208,7 +270,7 @@ export const ProfileScreen = ({ t, theme, toggleTheme, lang, toggleLang, onLogou
             </button>
           </div>
 
-          {/* Language Toggle */}
+          {/* Language toggle */}
           <div className="p-5 flex items-center justify-between hover:bg-theme-bg-secondary transition-colors">
             <div className="flex items-center gap-4">
               <div className="p-2 bg-hot-pink/10 text-hot-pink rounded-xl">
@@ -224,10 +286,10 @@ export const ProfileScreen = ({ t, theme, toggleTheme, lang, toggleLang, onLogou
             </button>
           </div>
 
-          {/* Password Section */}
+          {/* Change password */}
           <div className="p-5 space-y-4">
             <button
-              onClick={() => setIsChangingPass(!isChangingPass)}
+              onClick={() => setIsChangingPassword(!isChangingPassword)}
               className="w-full flex items-center justify-between group"
             >
               <div className="flex items-center gap-4">
@@ -236,11 +298,17 @@ export const ProfileScreen = ({ t, theme, toggleTheme, lang, toggleLang, onLogou
                 </div>
                 <span className="text-sm font-medium">{t.changePass}</span>
               </div>
-              <ChevronRight size={16} className={cn("text-slate-400 transition-transform", isChangingPass && "rotate-90")} />
+              <ChevronRight
+                size={16}
+                className={cn(
+                  'text-slate-400 transition-transform',
+                  isChangingPassword && 'rotate-90'
+                )}
+              />
             </button>
 
             <AnimatePresence>
-              {isChangingPass && (
+              {isChangingPassword && (
                 <motion.div
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: 'auto', opacity: 1 }}
@@ -251,21 +319,27 @@ export const ProfileScreen = ({ t, theme, toggleTheme, lang, toggleLang, onLogou
                     type="password"
                     icon={Lock}
                     placeholder={t.newPass}
-                    value={passData.new}
-                    onChange={(e: any) => setPassData({ ...passData, new: e.target.value })}
+                    value={passwordData.new}
+                    onChange={(e: any) =>
+                      setPasswordData({ ...passwordData, new: e.target.value })
+                    }
                   />
                   <Input
                     type="password"
                     icon={Lock}
                     placeholder={t.confirmPass}
-                    value={passData.confirm}
-                    onChange={(e: any) => setPassData({ ...passData, confirm: e.target.value })}
+                    value={passwordData.confirm}
+                    onChange={(e: any) =>
+                      setPasswordData({ ...passwordData, confirm: e.target.value })
+                    }
                   />
                   <Button
                     variant="outline"
                     className="h-10 text-xs"
-                    onClick={handlePassSave}
-                    disabled={!passData.new || passData.new !== passData.confirm}
+                    onClick={handleSavePassword}
+                    disabled={
+                      !passwordData.new || passwordData.new !== passwordData.confirm
+                    }
                   >
                     {t.saveChanges}
                   </Button>
@@ -275,14 +349,16 @@ export const ProfileScreen = ({ t, theme, toggleTheme, lang, toggleLang, onLogou
           </div>
         </div>
 
-        <button onClick={onLogout} className="w-full p-5 glass rounded-2xl border-red-500/10 flex items-center gap-4 text-red-500 mt-6 active:scale-95 transition-all">
+        <button
+          onClick={onLogout}
+          className="w-full p-5 glass rounded-2xl border-red-500/10 flex items-center gap-4 text-red-500 mt-6 active:scale-95 transition-all"
+        >
           <div className="p-2 bg-red-100 flex items-center justify-center rounded-xl">
             <LogOut size={18} />
           </div>
           <span className="text-sm font-medium">Logout</span>
         </button>
       </div>
-
     </motion.div>
   );
 };

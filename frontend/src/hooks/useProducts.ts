@@ -14,14 +14,13 @@ export interface Product {
 
 export function useProducts() {
   const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      // Query ke backend Express
-      const response = await axios.get(`${API_URL}/products`);
+      const response = await axios.get<Product[]>(`${API_URL}/products`);
       setProducts(response.data || []);
     } catch (err: any) {
       setError(err.message || 'Gagal memuat produk');
